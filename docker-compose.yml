@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: mern-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build:
+      context: ./backend   # folder containing backend Dockerfile
+      dockerfile: Dockerfile
+    container_name: mern-backend
+    ports:
+      - "3000:3000"
+    environment:
+      MONGO: mongodb://mongo:27017/mydatabase
+      CLIENT_URL: http://localhost:5173
+      IK_URL_ENDPOINT: ${IK_URL_ENDPOINT}
+      IK_PUBLIC_KEY: ${IK_PUBLIC_KEY}
+      IK_PRIVATE_KEY: ${IK_PRIVATE_KEY}
+    depends_on:
+      - mongo
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build:
+      context: ./client    # folder containing frontend Dockerfile
+      dockerfile: Dockerfile
+      args:  # ✅ Correct - this is build time
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
+        VITE_IK_URL_ENDPOINT: ${VITE_IK_URL_ENDPOINT}
+        VITE_IK_PUBLIC_KEY: ${VITE_IK_PUBLIC_KEY}
+    container_name: mern-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    # volumes:
+    #   - ./client:/app
+    #   - /app/node_modules
+
+volumes:
+  mongo-data:
